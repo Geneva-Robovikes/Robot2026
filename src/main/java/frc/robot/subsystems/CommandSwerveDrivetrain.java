@@ -22,6 +22,8 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.units.TimeUnit;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
@@ -73,8 +75,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             (speeds)->this.setControl(autoRequest.withSpeeds(speeds)), // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds. Also optionally outputs individual module feedforwards
                 new PPHolonomicDriveController( // PPHolonomicController is the built in path following controller for holonomic drive trains
                 //d 0.00041
-                new PIDConstants(10, 0, 0), // Translation PID constants
-                new PIDConstants(10, 0, 0) // Rotation PID constants
+                new PIDConstants(1, 0, 0), // Translation PID constants
+                new PIDConstants(1, 0, 0) // Rotation PID constants
                 ),
                 config, // The robot configuration
                 () -> {
@@ -101,7 +103,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         new SysIdRoutine.Config(
             null,        // Use default ramp rate (1 V/s)
             Volts.of(4), // Reduce dynamic step voltage to 4 V to prevent brownout
-            null,        // Use default timeout (10 s)
+            Time.ofBaseUnits(5, Seconds),        // Use default timeout (10 s)
             // Log state with SignalLogger class
             state -> SignalLogger.writeString("SysIdTranslation_State", state.toString())
         ),
@@ -117,7 +119,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         new SysIdRoutine.Config(
             null,        // Use default ramp rate (1 V/s)
             Volts.of(7), // Use dynamic voltage of 7 V
-            null,        // Use default timeout (10 s)
+            Time.ofBaseUnits(5, Seconds),        // Use default timeout (10 s)
             // Log state with SignalLogger class
             state -> SignalLogger.writeString("SysIdSteer_State", state.toString())
         ),
@@ -139,7 +141,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             Volts.of(Math.PI / 6).per(Second),
             /* This is in radians per second, but SysId only supports "volts" */
             Volts.of(Math.PI),
-            null, // Use default timeout (10 s)
+            Time.ofBaseUnits(5, Seconds), // Use default timeout (10 s)
             // Log state with SignalLogger class
             state -> SignalLogger.writeString("SysIdRotation_State", state.toString())
         ),
