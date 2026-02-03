@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import static edu.wpi.first.units.Units.*;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.SignalLogger;
@@ -15,6 +16,7 @@ import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -52,18 +54,10 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private final SwerveRequest.SysIdSwerveSteerGains m_steerCharacterization = new SwerveRequest.SysIdSwerveSteerGains();
     private final SwerveRequest.SysIdSwerveRotation m_rotationCharacterization = new SwerveRequest.SysIdSwerveRotation();
 
+    public final Consumer<ChassisSpeeds> autoRequest = speeds -> new SwerveRequest.ApplyRobotSpeeds().withSpeeds(speeds);
+
     public void configureBLine() {
         // Create a reusable builder with your robot's configuration
-        FollowPath.Builder pathBuilder = new FollowPath.Builder(
-            this,                      // The drive subsystem to require
-            this.getState().Pose,             // Supplier for current robot pose
-            this.getState().Speeds,    // Supplier for current speeds
-            driveSubsystem::drive,               // Consumer to drive the robot
-            new PIDController(5.0, 0.0, 0.0),    // Translation PID
-            new PIDController(3.0, 0.0, 0.0),    // Rotation PID
-            new PIDController(2.0, 0.0, 0.0)     // Cross-track PID
-        ).withDefaultShouldFlip()                // Auto-flip for red alliance
-        .withPoseReset(this::resetPose);  // Reset odometry at path start
     }
 
     /* SysId routine for characterizing translation. This is used to find PID gains for the drive motors. */
@@ -143,7 +137,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         SwerveModuleConstants<?, ?, ?>... modules
     ) {
         super(drivetrainConstants, modules);
-        configurePathPlanner();
+        configureBLine();
         if (Utils.isSimulation()) {
             startSimThread();
         }
@@ -168,7 +162,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         SwerveModuleConstants<?, ?, ?>... modules
     ) {
         super(drivetrainConstants, odometryUpdateFrequency, modules);
-        configurePathPlanner();
+        configureBLine();
         if (Utils.isSimulation()) {
             startSimThread();
         }
@@ -201,7 +195,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         SwerveModuleConstants<?, ?, ?>... modules
     ) {
         super(drivetrainConstants, odometryUpdateFrequency, odometryStandardDeviation, visionStandardDeviation, modules);
-        configurePathPlanner();
+        configureBLine();
         if (Utils.isSimulation()) {
             startSimThread();
         }

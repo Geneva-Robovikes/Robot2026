@@ -6,16 +6,23 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.util.function.Consumer;
+
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.robot.generated.TunerConstants;
+import frc.robot.lib.BLine.FollowPath;
+import frc.robot.lib.BLine.Path;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.PhotonVisionSubsystem;
 
@@ -37,7 +44,21 @@ public class RobotContainer {
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     public final PhotonVisionSubsystem vision = new PhotonVisionSubsystem(drivetrain);
 
+    public final FollowPath.Builder pathBuilder;
+    public final SwerveRequest.ApplyRobotSpeeds autoRequest = new SwerveRequest.ApplyRobotSpeeds();
+
     public RobotContainer() {
+        pathBuilder = new FollowPath.Builder(
+            drivetrain,                      // The drive subsystem to require
+            () -> drivetrain.getState().Pose,             // Supplier for current robot pose
+            () -> drivetrain.getState().Speeds,    // Supplier for current speeds
+            (speeds) -> drivetrain.setControl(autoRequest.withSpeeds(speeds)),               // Consumer to drive the robot
+            new PIDController(6.7, 0.0, 0.0),    // Translation PID
+            new PIDController(3.0, 0.0, 0.0),    // Rotation PID
+            new PIDController(2.0, 0.0, 0.0)     // Cross-track PID
+        ).withDefaultShouldFlip()                // Auto-flip for red alliance
+        .withPoseReset(drivetrain::resetPose);  // Reset odometry at path start
+
         configureBindings();
     }
 
@@ -79,6 +100,10 @@ public class RobotContainer {
     }
 
     public Command getAutonomousCommand() {
-        return null;
+        Path testPath = new Path("bline_test");
+
+        Command testPathCommand = pathBuilder.build(testPath);
+
+        return testPathCommand;
     }
 }
