@@ -12,6 +12,7 @@ import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
@@ -25,6 +26,7 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
+import frc.robot.lib.BLine.FollowPath;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements
@@ -50,7 +52,19 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private final SwerveRequest.SysIdSwerveSteerGains m_steerCharacterization = new SwerveRequest.SysIdSwerveSteerGains();
     private final SwerveRequest.SysIdSwerveRotation m_rotationCharacterization = new SwerveRequest.SysIdSwerveRotation();
 
-    public void configurePathPlanner() {}
+    public void configureBLine() {
+        // Create a reusable builder with your robot's configuration
+        FollowPath.Builder pathBuilder = new FollowPath.Builder(
+            this,                      // The drive subsystem to require
+            this.getState().Pose,             // Supplier for current robot pose
+            this.getState().Speeds,    // Supplier for current speeds
+            driveSubsystem::drive,               // Consumer to drive the robot
+            new PIDController(5.0, 0.0, 0.0),    // Translation PID
+            new PIDController(3.0, 0.0, 0.0),    // Rotation PID
+            new PIDController(2.0, 0.0, 0.0)     // Cross-track PID
+        ).withDefaultShouldFlip()                // Auto-flip for red alliance
+        .withPoseReset(this::resetPose);  // Reset odometry at path start
+    }
 
     /* SysId routine for characterizing translation. This is used to find PID gains for the drive motors. */
     private final SysIdRoutine m_sysIdRoutineTranslation = new SysIdRoutine(
