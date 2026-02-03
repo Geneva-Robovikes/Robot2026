@@ -42,7 +42,7 @@ public class PhotonVisionSubsystem extends SubsystemBase {
 
     visionSim = new VisionSystemSim("main");
 
-    cameraOne = new PhotonCamera("CameraOne");
+    cameraOne = new PhotonCamera("cameraOne");
     cameraTwo = new PhotonCamera("cameraTwo");  
 
     cameraOnePosition = new Transform3d();
