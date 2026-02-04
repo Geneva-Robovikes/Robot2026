@@ -11,6 +11,8 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
@@ -20,7 +22,8 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.lib.BLine.FollowPath;
 import frc.robot.lib.BLine.Path;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.PhotonVisionSubsystem;
+import frc.robot.utils.AutoChooser;
+import frc.robot.utils.Vision;
 
 public class RobotContainer {
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -48,22 +51,28 @@ public class RobotContainer {
     private final CommandXboxController joystick = new CommandXboxController(0);
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-    public final PhotonVisionSubsystem vision = new PhotonVisionSubsystem(drivetrain);
+    public final Vision vision = new Vision(drivetrain);
+    public final AutoChooser chooser = new AutoChooser();
 
     public final FollowPath.Builder pathBuilder;
     public final SwerveRequest.ApplyRobotSpeeds autoRequest = new SwerveRequest.ApplyRobotSpeeds();
 
+    public final SendableChooser<Path> autoChooser = chooser.getAutoChooser();
+
     public RobotContainer() {
+        
         pathBuilder = new FollowPath.Builder(
             drivetrain,                      // The drive subsystem to require
             () -> drivetrain.getState().Pose,             // Supplier for current robot pose
             () -> drivetrain.getState().Speeds,    // Supplier for current speeds
             (speeds) -> drivetrain.setControl(autoRequest.withSpeeds(speeds)),               // Consumer to drive the robot
-            new PIDController(5, 0.0, 0.0),    // Translation PID
+            new PIDController(5, 0.0, 0.1),    // Translation PID
             new PIDController(3.0, 0.0, 0.0),    // Rotation PID
             new PIDController(2.0, 0.0, 0.0)     // Cross-track PID
         ).withDefaultShouldFlip()                // Auto-flip for red alliance
         .withPoseReset(drivetrain::resetPose);  // Reset odometry at path start
+
+        SmartDashboard.putData("BLINE AutoChooser", autoChooser);
 
         configureBindings();
     }
@@ -111,10 +120,7 @@ public class RobotContainer {
     }
 
     public Command getAutonomousCommand() {
-        Path testPath = new Path("bline_test");
-
-        Command testPathCommand = pathBuilder.build(testPath);
-
-        return testPathCommand;
+        Command path = pathBuilder.build(autoChooser.getSelected());
+        return path;
     }
 }

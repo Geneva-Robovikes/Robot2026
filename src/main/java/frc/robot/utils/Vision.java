@@ -2,7 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-package frc.robot.subsystems;
+package frc.robot.utils;
 
 import java.util.Optional;
 
@@ -16,10 +16,14 @@ import org.photonvision.simulation.VisionSystemSim;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.subsystems.CommandSwerveDrivetrain;
 
-public class PhotonVisionSubsystem extends SubsystemBase {
+public class Vision extends SubsystemBase {
   private final PhotonCamera cameraOne;
   private final PhotonCamera cameraTwo;
 
@@ -35,7 +39,7 @@ public class PhotonVisionSubsystem extends SubsystemBase {
 
   private final VisionSystemSim visionSim;
 
-  public PhotonVisionSubsystem(CommandSwerveDrivetrain swerveDrivetrain) {
+  public Vision(CommandSwerveDrivetrain swerveDrivetrain) {
     this.swerveDrivetrain = swerveDrivetrain;
 
     kTagLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndymark);
@@ -45,8 +49,8 @@ public class PhotonVisionSubsystem extends SubsystemBase {
     cameraOne = new PhotonCamera("cameraOne");
     cameraTwo = new PhotonCamera("cameraTwo");  
 
-    cameraOnePosition = new Transform3d();
-    cameraTwoPosition = new Transform3d();
+    cameraOnePosition = new Transform3d(new Translation3d(Units.inchesToMeters(-10.875), Units.inchesToMeters(-10.875), 0), new Rotation3d(Units.degreesToRadians(135), 0, 0));
+    cameraTwoPosition = new Transform3d(new Translation3d(Units.inchesToMeters(-10.875), Units.inchesToMeters(10.875), 0), new Rotation3d(Units.degreesToRadians(-45), 0, 0));
 
     cameraOnePoseEstimator = new PhotonPoseEstimator(kTagLayout, cameraOnePosition);
     cameraTwoPoseEstimator = new PhotonPoseEstimator(kTagLayout, cameraTwoPosition);
@@ -59,8 +63,8 @@ public class PhotonVisionSubsystem extends SubsystemBase {
     var cameraOneResult = cameraOne.getLatestResult();
     var cameraTwoResult = cameraTwo.getLatestResult();
 
-    Optional<EstimatedRobotPose> cameraOnePose = cameraOnePoseEstimator.update(cameraOneResult);
-    Optional<EstimatedRobotPose> cameraTwoPose = cameraTwoPoseEstimator.update(cameraTwoResult);
+    Optional<EstimatedRobotPose> cameraOnePose = cameraOnePoseEstimator.estimateCoprocMultiTagPose(cameraOneResult);
+    Optional<EstimatedRobotPose> cameraTwoPose = cameraTwoPoseEstimator.estimateCoprocMultiTagPose(cameraTwoResult);
 
     if (cameraOnePose.isPresent()) {
       swerveDrivetrain.addVisionMeasurement(
