@@ -6,16 +6,12 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
-import java.util.function.Consumer;
-
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
@@ -34,8 +30,18 @@ public class RobotContainer {
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.07) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
+
     private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
+
+    private final SwerveRequest.FieldCentricFacingAngle pointAt = new SwerveRequest.FieldCentricFacingAngle()
+            .withHeadingPID(1, 0, 0)
+            .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.07)
+            .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+
+    private final Rotation2d pointAtAngle = new Rotation2d(Math.PI/2); // 90 degrees
+
+
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
@@ -53,7 +59,7 @@ public class RobotContainer {
             () -> drivetrain.getState().Pose,             // Supplier for current robot pose
             () -> drivetrain.getState().Speeds,    // Supplier for current speeds
             (speeds) -> drivetrain.setControl(autoRequest.withSpeeds(speeds)),               // Consumer to drive the robot
-            new PIDController(6.7, 0.0, 0.0),    // Translation PID
+            new PIDController(5, 0.0, 0.0),    // Translation PID
             new PIDController(3.0, 0.0, 0.0),    // Rotation PID
             new PIDController(2.0, 0.0, 0.0)     // Cross-track PID
         ).withDefaultShouldFlip()                // Auto-flip for red alliance
@@ -85,6 +91,11 @@ public class RobotContainer {
         joystick.b().whileTrue(drivetrain.applyRequest(() ->
             point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
         ));
+
+        joystick.x().whileTrue(drivetrain.applyRequest(() -> pointAt
+            .withVelocityX(-joystick.getLeftY() * MaxSpeed)
+            .withVelocityY(-joystick.getLeftX())
+            .withTargetDirection(pointAtAngle)));
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
