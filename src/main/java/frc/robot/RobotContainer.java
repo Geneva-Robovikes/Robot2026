@@ -11,6 +11,7 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -66,9 +67,9 @@ public class RobotContainer {
             () -> drivetrain.getState().Pose,             // Supplier for current robot pose
             () -> drivetrain.getState().Speeds,    // Supplier for current speeds
             (speeds) -> drivetrain.setControl(autoRequest.withSpeeds(speeds)),               // Consumer to drive the robot
-            new PIDController(5, 0.0, 0.1),    // Translation PID
+            new PIDController(3.45,0,0.05),// Translation PID
             new PIDController(3.0, 0.0, 0.0),    // Rotation PID
-            new PIDController(2.0, 0.0, 0.0)     // Cross-track PID
+            new PIDController(1.5, 0.0, 0.0)     // Cross-track PID
         ).withDefaultShouldFlip()                // Auto-flip for red alliance
         .withPoseReset(drivetrain::resetPose);  // Reset odometry at path start
 
@@ -101,10 +102,25 @@ public class RobotContainer {
             point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
         ));
 
-        joystick.x().whileTrue(drivetrain.applyRequest(() -> pointAt
-            .withVelocityX(-joystick.getLeftY() * MaxSpeed)
-            .withVelocityY(-joystick.getLeftX())
-            .withTargetDirection(pointAtAngle)));
+        joystick.x().whileTrue(
+            drivetrain.applyRequest(() -> {
+                double robotX = drivetrain.getState().Pose.getX();
+                double robotY = drivetrain.getState().Pose.getY();
+
+                double targetX = 4.583;
+                double targetY = 4.033;
+
+                double dx = targetX - robotX;
+                double dy = targetY - robotY;
+
+                Rotation2d targetRotation = new Rotation2d(Math.atan2(dy, dx));
+
+                return pointAt
+                    .withVelocityX(-joystick.getLeftY() * MaxSpeed)
+                    .withVelocityY(-joystick.getLeftX() * MaxSpeed)
+                    .withTargetDirection(targetRotation);
+            })
+        );
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
