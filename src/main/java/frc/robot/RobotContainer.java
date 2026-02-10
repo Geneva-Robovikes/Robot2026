@@ -11,7 +11,6 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -134,7 +133,10 @@ public class RobotContainer {
     }
 
     public Command getAutonomousCommand() {
+        /*
         Command path = pathBuilder.build(autoChooser.getSelected());
-        return path;
+        return path; */
+
+        return null;
     }
 }
