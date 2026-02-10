@@ -45,8 +45,6 @@ public class RobotContainer {
 
     private final Rotation2d pointAtAngle = new Rotation2d(Math.PI/2); // 90 degrees
 
-
-
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
     private final CommandXboxController joystick = new CommandXboxController(0);
