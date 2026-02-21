@@ -11,7 +11,6 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -42,8 +41,6 @@ public class RobotContainer {
             .withHeadingPID(1, 0, 0)
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.07)
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
-
-    private final Rotation2d pointAtAngle = new Rotation2d(Math.PI/2); // 90 degrees
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
