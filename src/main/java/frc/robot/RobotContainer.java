@@ -6,6 +6,8 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.util.Optional;
+
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
@@ -21,6 +23,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.generated.TunerConstants;
 import frc.robot.lib.BLine.FollowPath;
 import frc.robot.lib.BLine.Path;
+import frc.robot.subsystems.ClimbSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.utils.AutoChooser;
 import frc.robot.utils.Vision;
@@ -49,6 +52,8 @@ public class RobotContainer {
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     public final Vision vision = new Vision(drivetrain);
     public final AutoChooser chooser = new AutoChooser();
+
+    public final ClimbSubsystem climbSubsystem = new ClimbSubsystem();
 
     public final FollowPath.Builder pathBuilder;
     public final SwerveRequest.ApplyRobotSpeeds autoRequest = new SwerveRequest.ApplyRobotSpeeds();
@@ -130,8 +135,13 @@ public class RobotContainer {
         drivetrain.registerTelemetry(logger::telemeterize);
     }
 
-    public Command getAutonomousCommand() {
-        Command path = pathBuilder.build(autoChooser.getSelected());
-        return path;
+    public Optional<Command> getAutonomousCommand() {
+        try {
+            Command path = pathBuilder.build(autoChooser.getSelected());
+
+            return Optional.of(path);
+        } catch (NullPointerException exception) {
+            return Optional.empty();
+        }
     }
 }
