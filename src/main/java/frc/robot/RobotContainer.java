@@ -16,7 +16,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
@@ -44,7 +43,7 @@ public class RobotContainer {
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
     private final SwerveRequest.FieldCentricFacingAngle pointAt = new SwerveRequest.FieldCentricFacingAngle()
-            .withHeadingPID(1, 0, 0)
+            .withHeadingPID(7, 0, 0)
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.07)
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
 
@@ -139,7 +138,7 @@ public class RobotContainer {
             })
         ); */
 
-        joystick.y().onTrue(pathfind.to(Location.CLIMB));
+        joystick.y().whileTrue(pathfind.to(Location.CLIMB));
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
