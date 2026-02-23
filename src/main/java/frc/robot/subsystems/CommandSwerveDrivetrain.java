@@ -97,16 +97,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         }
     }
 
-    public Command getPathfindingCommand(PathPlannerPath path, PathConstraints constraints) {
-        if (AutoBuilder.isConfigured()) {
-            System.out.println("returning command");
-            return AutoBuilder.pathfindThenFollowPath(path, constraints);
-        } else {
-            System.out.println("Not configured");
-            return new Command() {};
-        }
-    }
-
     /* SysId routine for characterizing translation. This is used to find PID gains for the drive motors. */
     private final SysIdRoutine m_sysIdRoutineTranslation = new SysIdRoutine(
         new SysIdRoutine.Config(
