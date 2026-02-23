@@ -7,6 +7,9 @@ package frc.robot;
 import java.util.Optional;
 
 import com.ctre.phoenix6.HootAutoReplay;
+import com.pathplanner.lib.commands.PathfindingCommand;
+import com.pathplanner.lib.pathfinding.LocalADStar;
+import com.pathplanner.lib.pathfinding.Pathfinding;
 
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -26,6 +29,9 @@ public class Robot extends TimedRobot {
 
     public Robot() {
         m_robotContainer = new RobotContainer();
+
+        Pathfinding.setPathfinder(new LocalADStar());
+        PathfindingCommand.warmupCommand().schedule();
     }
 
     @Override
@@ -49,10 +55,12 @@ public class Robot extends TimedRobot {
     public void autonomousInit() {
         Optional<Command> returnedCommand = m_robotContainer.getAutonomousCommand();
 
-        if (m_autonomousCommand != null && returnedCommand.isPresent()) {
+        if (returnedCommand.isPresent()) {
             m_autonomousCommand = m_robotContainer.getAutonomousCommand().get();
             
-            CommandScheduler.getInstance().schedule(m_autonomousCommand);
+            if (m_autonomousCommand != null) {
+                CommandScheduler.getInstance().schedule(m_autonomousCommand);
+            }
         }
     }
 
