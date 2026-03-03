@@ -1,5 +1,6 @@
 package frc.robot.utils;
 
 public enum Location{
-    CLIMB
+    DRIVER_RIGHT_CLIMB,
+    DRIVER_LEFT_CLIMB
 }

@@ -13,7 +13,7 @@ public class Pathfind {
 
     public Pathfind() {
         constraints = new PathConstraints(
-        3.0, 4.0,
+        4.0, 5.2,
         Units.degreesToRadians(540), Units.degreesToRadians(720));
     }
 
@@ -27,8 +27,17 @@ public class Pathfind {
 
     public Command to(Location location) {
         switch (location) {
-            case CLIMB:
-                load("climb");
+            case DRIVER_RIGHT_CLIMB:
+                load("climbr");
+
+                if (AutoBuilder.isConfigured()) {
+                    Command pathfindingCommand = AutoBuilder.pathfindThenFollowPath(path, constraints);
+
+                    return pathfindingCommand;
+                }
+
+            case DRIVER_LEFT_CLIMB:
+                load("climbl");
 
                 if (AutoBuilder.isConfigured()) {
                     Command pathfindingCommand = AutoBuilder.pathfindThenFollowPath(path, constraints);

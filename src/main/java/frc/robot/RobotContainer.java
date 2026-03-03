@@ -19,12 +19,19 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
-
+import frc.robot.commands.HoodDownCommand;
+import frc.robot.commands.HoodUpCommand;
+import frc.robot.commands.RunAgitatorCommand;
+import frc.robot.commands.RunHandoffCommand;
+import frc.robot.commands.RunInakePivotCommand;
+import frc.robot.commands.RunShooterCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.lib.BLine.FollowPath;
 import frc.robot.lib.BLine.Path;
 import frc.robot.subsystems.ClimbSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.IntakeSubsystem;
+import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.utils.AutoChooser;
 import frc.robot.utils.Location;
 import frc.robot.utils.Pathfind;
@@ -39,8 +46,8 @@ public class RobotContainer {
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.07) // Add a 10% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
 
-    private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
-    private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
+    //private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
+    //private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
     private final SwerveRequest.FieldCentricFacingAngle pointAt = new SwerveRequest.FieldCentricFacingAngle()
             .withHeadingPID(7, 0, 0)
@@ -59,6 +66,15 @@ public class RobotContainer {
     private final AutoChooser chooser = new AutoChooser();
 
     private final ClimbSubsystem climbSubsystem = new ClimbSubsystem();
+    private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
+    private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
+
+    private final RunShooterCommand runShooterCommand = new RunShooterCommand(shooterSubsystem);
+    private final RunAgitatorCommand runAgitatorCommand = new RunAgitatorCommand(shooterSubsystem);
+    private final RunInakePivotCommand runInakePivotCommand = new RunInakePivotCommand(intakeSubsystem);
+    private final RunHandoffCommand runHandoffCommand = new RunHandoffCommand(shooterSubsystem);
+    private final HoodDownCommand hoodDownCommand = new HoodDownCommand(shooterSubsystem);
+    private final HoodUpCommand hoodUpCommand = new HoodUpCommand(shooterSubsystem);
 
     private final FollowPath.Builder pathBuilder;
     private final SendableChooser<Path> autoChooser = chooser.getAutoChooser();
@@ -102,10 +118,10 @@ public class RobotContainer {
             drivetrain.applyRequest(() -> idle).ignoringDisable(true)
         );
 
-        joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
-        joystick.b().whileTrue(drivetrain.applyRequest(() ->
-            point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
-        ));
+        //joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
+        //joystick.b().whileTrue(drivetrain.applyRequest(() ->
+         //   point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
+        //));
 
         joystick.x().whileTrue(
             drivetrain.applyRequest(() -> {
@@ -128,7 +144,15 @@ public class RobotContainer {
         );
 
         /* While the y button is pressed, pathfind to the tower and extend the climb. After its released, retract the climb. */
-        joystick.y().whileTrue(new ParallelCommandGroup(pathfind.to(Location.CLIMB), climbSubsystem.extend())).onFalse(climbSubsystem.retract());
+        joystick.povRight().whileTrue(new ParallelCommandGroup(pathfind.to(Location.DRIVER_RIGHT_CLIMB), climbSubsystem.extend())).onFalse(climbSubsystem.retract());
+        joystick.povLeft().whileTrue(new ParallelCommandGroup(pathfind.to(Location.DRIVER_LEFT_CLIMB), climbSubsystem.extend())).onFalse(climbSubsystem.retract());
+        
+        joystick.b().whileTrue(climbSubsystem.extend()).onFalse(climbSubsystem.retract());
+        joystick.a().whileTrue(runShooterCommand);
+        joystick.y().whileTrue(runInakePivotCommand);
+
+        joystick.povUp().whileTrue(hoodUpCommand);
+        joystick.povDown().whileTrue(hoodDownCommand);
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.

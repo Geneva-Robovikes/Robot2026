@@ -22,13 +22,13 @@ public class ClimbSubsystem extends SubsystemBase {
 
   //Rotor positions at the bottom and top of the elevator
   private static final double RETRACTED = 0;
-  private static final double EXTENDED = 100;
+  private static final double EXTENDED = 58;
 
 
   public ClimbSubsystem() {
     motionMagic = new MotionMagicVoltage(0);
-    leftClimbMotor = new TalonFX(20);
-    rightClimbMotor = new TalonFX(21);
+    leftClimbMotor = new TalonFX(14);
+    rightClimbMotor = new TalonFX(15);
 
     leftClimbMotor.setNeutralMode(NeutralModeValue.Brake);
     rightClimbMotor.setNeutralMode(NeutralModeValue.Brake);
@@ -43,15 +43,15 @@ public class ClimbSubsystem extends SubsystemBase {
     config.Slot0.kS = 0.1;
     config.Slot0.kV = 0.1;
 
-    config.MotionMagic.MotionMagicAcceleration = 40;
-    config.MotionMagic.MotionMagicCruiseVelocity = 80;
+    config.MotionMagic.MotionMagicAcceleration = 400;
+    config.MotionMagic.MotionMagicCruiseVelocity = 200;
 
     leftClimbMotor.getConfigurator().apply(config);
     rightClimbMotor.getConfigurator().apply(config);
 
     /*We want the motors to run at the same speed, so this code
     sets the right motor to follow the speed of the left motor*/
-    rightClimbMotor.setControl(new Follower(leftClimbMotor.getDeviceID(), MotorAlignmentValue.Aligned));
+    rightClimbMotor.setControl(new Follower(leftClimbMotor.getDeviceID(), MotorAlignmentValue.Opposed));
   }
 
   public void goToPosition(double rotations) {
