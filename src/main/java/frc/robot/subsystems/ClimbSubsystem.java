@@ -11,8 +11,10 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.utils.MechanismEnum;
 
 public class ClimbSubsystem extends SubsystemBase {
   private final TalonFX leftClimbMotor;
@@ -22,7 +24,9 @@ public class ClimbSubsystem extends SubsystemBase {
 
   //Rotor positions at the bottom and top of the elevator
   private static final double RETRACTED = 0;
-  private static final double EXTENDED = 58;
+  private static final double EXTENDED = 52.5;
+
+  private MechanismEnum STATE = MechanismEnum.NULL;
 
 
   public ClimbSubsystem() {
@@ -54,18 +58,33 @@ public class ClimbSubsystem extends SubsystemBase {
     rightClimbMotor.setControl(new Follower(leftClimbMotor.getDeviceID(), MotorAlignmentValue.Opposed));
   }
 
-  public void goToPosition(double rotations) {
-    leftClimbMotor.setControl(motionMagic.withPosition(rotations));
+  public void runClimbMotors(MechanismEnum state) {
+    switch (state) {
+      case CLIMB_UP:
+        STATE = MechanismEnum.CLIMB_UP;
+
+        leftClimbMotor.setControl(motionMagic.withPosition(EXTENDED));
+        break;
+      case CLIMB_DOWN:
+        STATE = MechanismEnum.CLIMB_DOWN;
+
+        leftClimbMotor.setControl(motionMagic.withPosition(RETRACTED));
+        break;
+      default:
+        break;
+    }
   }
 
   @Override
-  public void periodic() {}
+  public void periodic() {
+    SmartDashboard.putString("Climb State", STATE.name());
+  }
 
   public Command extend() {
-    return run(() -> goToPosition(EXTENDED));
+    return run(() -> runClimbMotors(MechanismEnum.CLIMB_UP));
   }
 
   public Command retract() {
-    return run(() -> goToPosition(RETRACTED));
+    return run(() -> runClimbMotors(MechanismEnum.CLIMB_DOWN));
   }
 }

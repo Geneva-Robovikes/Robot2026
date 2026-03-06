@@ -9,13 +9,10 @@ import java.util.Optional;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
-import org.photonvision.simulation.PhotonCameraSim;
-import org.photonvision.simulation.SimCameraProperties;
-import org.photonvision.simulation.VisionSystemSim;
+import org.photonvision.proto.Photon;
 
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -28,41 +25,49 @@ public class Vision extends SubsystemBase {
   private final PhotonCamera cameraOne;
   private final PhotonCamera cameraTwo;
   private final PhotonCamera cameraThree;
+  private final PhotonCamera cameraFour;
+
+  private final PhotonCamera fuelCameraOne;
 
   private final Transform3d cameraOnePosition;
   private final Transform3d cameraTwoPosition;
   private final Transform3d cameraThreePosition;
+  private final Transform3d cameraFourPosition;
+
+  private final Transform3d fuelCameraOnePosition;
 
   private final PhotonPoseEstimator cameraOnePoseEstimator;
   private final PhotonPoseEstimator cameraTwoPoseEstimator;
   private final PhotonPoseEstimator cameraThreePoseEstimator;
+  private final PhotonPoseEstimator cameraFourPoseEstimator;
   
   public final AprilTagFieldLayout kTagLayout;
 
   private final CommandSwerveDrivetrain swerveDrivetrain;
-
-  private final VisionSystemSim visionSim;
 
   public Vision(CommandSwerveDrivetrain swerveDrivetrain) {
     this.swerveDrivetrain = swerveDrivetrain;
 
     kTagLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltAndymark);
 
-    visionSim = new VisionSystemSim("main");
-
     cameraOne = new PhotonCamera("cameraOne");
     cameraTwo = new PhotonCamera("cameraTwo");  
     cameraThree = new PhotonCamera("cameraThree");
+    cameraFour = new PhotonCamera("cameraFour");
+
+    fuelCameraOne = new PhotonCamera("fuelCameraOne");
 
     cameraOnePosition = new Transform3d(new Translation3d(Units.inchesToMeters(-10.875), Units.inchesToMeters(-10.875), Units.inchesToMeters(7.25)), new Rotation3d(0, Units.degreesToRadians(15), Units.degreesToRadians(-145)));
     cameraTwoPosition = new Transform3d(new Translation3d(Units.inchesToMeters(-10.875), Units.inchesToMeters(10.875), Units.inchesToMeters(7.25)), new Rotation3d(0, Units.degreesToRadians(15), Units.degreesToRadians(142)));
     cameraThreePosition = new Transform3d(new Translation3d(Units.inchesToMeters(10.875), Units.inchesToMeters(-10.875), Units.inchesToMeters(7.25)), new Rotation3d(0, Units.degreesToRadians(15), Units.degreesToRadians(-40)));
+    cameraFourPosition = new Transform3d(new Translation3d(Units.inchesToMeters(10.875), Units.inchesToMeters(-10.875), Units.inchesToMeters(7.25)), new Rotation3d(0, Units.degreesToRadians(15), Units.degreesToRadians(-40)));
+
+    fuelCameraOnePosition = new Transform3d(new Translation3d(Units.inchesToMeters(10.875), Units.inchesToMeters(-10.875), Units.inchesToMeters(7.25)), new Rotation3d(0, Units.degreesToRadians(15), Units.degreesToRadians(-40)));
 
     cameraOnePoseEstimator = new PhotonPoseEstimator(kTagLayout, cameraOnePosition);
     cameraTwoPoseEstimator = new PhotonPoseEstimator(kTagLayout, cameraTwoPosition);
     cameraThreePoseEstimator = new PhotonPoseEstimator(kTagLayout, cameraThreePosition);
-
-    configureSim();
+    cameraFourPoseEstimator = new PhotonPoseEstimator(kTagLayout, cameraFourPosition);
   }
 
   @Override
@@ -70,6 +75,9 @@ public class Vision extends SubsystemBase {
     var cameraOneResult = cameraOne.getLatestResult();
     var cameraTwoResult = cameraTwo.getLatestResult();
     var cameraThreeResult = cameraThree.getLatestResult();
+    var cameraFourResult = cameraFour.getLatestResult();
+
+    var fuelResult = fuelCameraOne.getLatestResult();
 
     if (cameraOneResult.hasTargets()) {
       SmartDashboard.putBoolean("oneHasTarget", true);
@@ -89,9 +97,25 @@ public class Vision extends SubsystemBase {
       SmartDashboard.putBoolean("threeHasTarget", false);
     }
 
+    if (cameraFourResult.hasTargets()) {
+      SmartDashboard.putBoolean("fourHasTarget", true);
+    } else {
+      SmartDashboard.putBoolean("fourHasResult", false);
+    }
+
+    if (fuelResult.hasTargets()) {
+      SmartDashboard.putBoolean("fuelHasTarget", true);
+      SmartDashboard.putNumber("bestFuelPositionX", fuelResult.getBestTarget().bestCameraToTarget.getX());
+      SmartDashboard.putNumber("bestFuelPositionY", fuelResult.getBestTarget().bestCameraToTarget.getY());
+      SmartDashboard.putNumber("bestFuelPositionZ", fuelResult.getBestTarget().bestCameraToTarget.getZ());
+    } else {
+      SmartDashboard.putBoolean("fuelHasTarget", false);
+    }
+
     Optional<EstimatedRobotPose> cameraOnePose = cameraOnePoseEstimator.estimateCoprocMultiTagPose(cameraOneResult);
     Optional<EstimatedRobotPose> cameraTwoPose = cameraTwoPoseEstimator.estimateCoprocMultiTagPose(cameraTwoResult);
     Optional<EstimatedRobotPose> cameraThreePose = cameraThreePoseEstimator.estimateCoprocMultiTagPose(cameraThreeResult);
+    Optional<EstimatedRobotPose> cameraFourPose = cameraFourPoseEstimator.estimateCoprocMultiTagPose(cameraFourResult);
 
     if (cameraOnePose.isPresent()) {
       SmartDashboard.putBoolean("camOnePresent", true);
@@ -105,8 +129,8 @@ public class Vision extends SubsystemBase {
     if (cameraTwoPose.isPresent()) {
       SmartDashboard.putBoolean("camTwoPresent", true);
       swerveDrivetrain.addVisionMeasurement(
-      cameraTwoPose.get().estimatedPose.toPose2d(), 
-      cameraTwoPose.get().timestampSeconds);
+        cameraTwoPose.get().estimatedPose.toPose2d(), 
+        cameraTwoPose.get().timestampSeconds);
     } else {
       SmartDashboard.putBoolean("camTwoPresent", false);
     }
@@ -114,31 +138,19 @@ public class Vision extends SubsystemBase {
     if (cameraThreePose.isPresent()) {
       SmartDashboard.putBoolean("camThreePresent", true);
       swerveDrivetrain.addVisionMeasurement(
-      cameraThreePose.get().estimatedPose.toPose2d(), 
-      cameraThreePose.get().timestampSeconds);
+        cameraThreePose.get().estimatedPose.toPose2d(), 
+        cameraThreePose.get().timestampSeconds);
     } else {
       SmartDashboard.putBoolean("camThreePresent", false);
     }
-  }
 
-  public void visionSimPeriodic() {}
-
-  private void configureSim() {
-    visionSim.addAprilTags(kTagLayout);
-
-    var cameraOneProp = new SimCameraProperties();
-    PhotonCameraSim cameraOneSim;
-
-    cameraOneProp.setCalibration(960, 720, Rotation2d.fromDegrees(90));
-    cameraOneProp.setCalibError(.35, .1);
-    cameraOneProp.setFPS(20);
-    cameraOneProp.setAvgLatencyMs(40);
-    cameraOneProp.setLatencyStdDevMs(15);
-
-    cameraOneSim = new PhotonCameraSim(cameraOne, cameraOneProp);
-
-    visionSim.addCamera(cameraOneSim, cameraOnePosition);
-
-    cameraOneSim.enableDrawWireframe(true);
+    if (cameraFourPose.isPresent()) {
+      SmartDashboard.putBoolean("camFourPresent", true);
+      swerveDrivetrain.addVisionMeasurement(
+        cameraFourPose.get().estimatedPose.toPose2d(), 
+        cameraFourPose.get().timestampSeconds);
+    } else {
+      SmartDashboard.putBoolean("camFourPresent", false);
+    }
   }
 }
