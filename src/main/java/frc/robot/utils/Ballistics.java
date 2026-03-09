@@ -13,6 +13,6 @@ public class Ballistics {
         /* This is just a placeholder value for testing. */
 
         /* 6000 RPM absolute max, 5500 max for good recovery */
-        return 2000;
+        return -2000;
     }
 }

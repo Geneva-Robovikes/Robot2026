@@ -103,17 +103,26 @@ public class ShooterSubsystem extends SubsystemBase {
   private void shooterToRPM(double rpm) {
     targetRPS = rpm/60;
     
-    leftShooterMotor.setControl(velocityRequest.withVelocity(-targetRPS));
+    leftShooterMotor.setControl(velocityRequest.withVelocity(targetRPS));
   }
 
   private void shooterHandoffSequence() {
     STATE = MechanismEnum.SHOOTER_CHARGING;
-    leftShooterMotor.set(-.75);
+    shooterToRPM(ballistics.calculateInitialShooterRPM());
     hoodToAngle(ballistics.calculateShooterAngle());
-    handoffMotor.set(.55);
-    STATE = MechanismEnum.SHOOTER_SHOOTING;
+
 
     agitatorMotor.set(.65);
+
+    if (atSpeed()) {
+      handoffMotor.set(.55);
+          
+      STATE = MechanismEnum.SHOOTER_SHOOTING;
+    } else {
+      handoffMotor.set(0);
+
+      STATE = MechanismEnum.SHOOTER_CHARGING;
+    }
   }
 
   private void runShooter() {

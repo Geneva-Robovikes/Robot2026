@@ -9,8 +9,6 @@ import java.util.Optional;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
-import org.photonvision.proto.Photon;
-
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -33,8 +31,6 @@ public class Vision extends SubsystemBase {
   private final Transform3d cameraTwoPosition;
   private final Transform3d cameraThreePosition;
   private final Transform3d cameraFourPosition;
-
-  private final Transform3d fuelCameraOnePosition;
 
   private final PhotonPoseEstimator cameraOnePoseEstimator;
   private final PhotonPoseEstimator cameraTwoPoseEstimator;
@@ -61,8 +57,6 @@ public class Vision extends SubsystemBase {
     cameraTwoPosition = new Transform3d(new Translation3d(Units.inchesToMeters(-7.5), Units.inchesToMeters(10.875), Units.inchesToMeters(27.5)), new Rotation3d(0, Units.degreesToRadians(-30), Units.degreesToRadians(90)));
     cameraThreePosition = new Transform3d(new Translation3d(Units.inchesToMeters(10.875), Units.inchesToMeters(-10.875), Units.inchesToMeters(7.25)), new Rotation3d(0, Units.degreesToRadians(15), Units.degreesToRadians(-40)));
     cameraFourPosition = new Transform3d(new Translation3d(Units.inchesToMeters(10.875), Units.inchesToMeters(-10.875), Units.inchesToMeters(7.25)), new Rotation3d(0, Units.degreesToRadians(15), Units.degreesToRadians(-40)));
-
-    fuelCameraOnePosition = new Transform3d(new Translation3d(Units.inchesToMeters(10.875), Units.inchesToMeters(-10.875), Units.inchesToMeters(7.25)), new Rotation3d(0, Units.degreesToRadians(15), Units.degreesToRadians(-40)));
 
     cameraOnePoseEstimator = new PhotonPoseEstimator(kTagLayout, cameraOnePosition);
     cameraTwoPoseEstimator = new PhotonPoseEstimator(kTagLayout, cameraTwoPosition);

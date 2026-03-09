@@ -25,7 +25,6 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.utils.AutoChooser;
-import frc.robot.utils.Pathfind;
 import frc.robot.utils.Vision;
 
 public class RobotContainer {
@@ -50,7 +49,6 @@ public class RobotContainer {
     /* Utils */
     private final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     private final Vision vision = new Vision(drivetrain);
-    private final Pathfind pathfind = new Pathfind();
     private final AutoChooser chooser = new AutoChooser();
 
     /* Subsystems */
