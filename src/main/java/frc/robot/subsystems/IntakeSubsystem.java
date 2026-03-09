@@ -33,7 +33,8 @@ public class IntakeSubsystem extends SubsystemBase {
     leftIntakeMotor = new SparkMax(16, MotorType.kBrushless);
     rightIntakeMotor = new SparkMax(17, MotorType.kBrushless);
 
-    pivotPidController = new PIDController(.6, 0, 0);
+    /* TODO: add feedforward */
+    pivotPidController = new PIDController(.9, 0, 0);
 
     intakeMotor = new TalonFX(13);
   }
@@ -85,6 +86,10 @@ public class IntakeSubsystem extends SubsystemBase {
   }
 
   public Command intake() {
-    return run(() -> intakeMotor.set(-.65));
+    return run(() -> intakeMotor.set(-.45));
+  }
+
+  public Command stopIntaking() {
+    return run(() -> intakeMotor.set(0));
   }
 }

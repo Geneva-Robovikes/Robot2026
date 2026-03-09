@@ -2,6 +2,7 @@ package frc.robot.utils;
 
 public enum MechanismEnum {
     SHOOTER_SHOOTING,
+    SHOOTER_CHARGING,
     SHOOTER_IDLE,
     INTAKE_UP,
     INTAKE_DOWN,

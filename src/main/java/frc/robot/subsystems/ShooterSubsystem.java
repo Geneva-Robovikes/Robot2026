@@ -4,7 +4,9 @@
 
 package frc.robot.subsystems;
 
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
@@ -34,6 +36,11 @@ public class ShooterSubsystem extends SubsystemBase {
 
   private MechanismEnum STATE = MechanismEnum.NULL;
 
+  private double targetRPS = 0;
+
+  private final VelocityVoltage velocityRequest =
+    new VelocityVoltage(0).withSlot(0).withEnableFOC(false);
+
   /* 
    * Handoff: Positive
    * Shooter: Negative
@@ -42,6 +49,21 @@ public class ShooterSubsystem extends SubsystemBase {
 
 
   public ShooterSubsystem() {
+    TalonFXConfiguration config = new TalonFXConfiguration();
+
+    /* TODO: tune */
+
+    config.Slot0.kS = 0.18;
+    config.Slot0.kV = 0.12;
+    config.Slot0.kA = 0.01;
+
+    config.Slot0.kP = 0.01;
+    config.Slot0.kI = 0.0;
+    config.Slot0.kD = 0.0;
+
+    config.CurrentLimits.SupplyCurrentLimit = 60;
+    config.CurrentLimits.SupplyCurrentLimitEnable = true;
+
     leftShooterMotor = new TalonFX(20);
     rightShooterMotor = new TalonFX(21);
     handoffMotor = new TalonFX(24);
@@ -55,12 +77,16 @@ public class ShooterSubsystem extends SubsystemBase {
     hoodMotor = new SparkMax(22, MotorType.kBrushless);
     agitatorMotor = new SparkMax(23, MotorType.kBrushless);
 
+    leftShooterMotor.getConfigurator().apply(config);
+    rightShooterMotor.getConfigurator().apply(config);
+
     rightShooterMotor.setControl(new Follower(leftShooterMotor.getDeviceID(), MotorAlignmentValue.Opposed));
   }
 
   @Override
   public void periodic() {
-    SmartDashboard.putNumber("Shooter Speed", leftShooterMotor.getVelocity().getValueAsDouble());
+    SmartDashboard.putNumber("Shooter Speed RPM", leftShooterMotor.getVelocity().getValueAsDouble() * 60);
+    SmartDashboard.putBoolean("Shooter At Speed", atSpeed());
     SmartDashboard.putNumber("Hood Angle", hoodEncoder.getPosition().getValueAsDouble());
     SmartDashboard.putNumber("Hood PID Controller", hoodPidController.calculate(hoodEncoder.getPosition().getValueAsDouble(), ballistics.calculateShooterAngle()));
 
@@ -74,31 +100,45 @@ public class ShooterSubsystem extends SubsystemBase {
     hoodMotor.set(hoodPidController.calculate(hoodEncoder.getPosition().getValueAsDouble(), angle));
   }
 
+  private void shooterToRPM(double rpm) {
+    targetRPS = rpm/60;
+    
+    leftShooterMotor.setControl(velocityRequest.withVelocity(-targetRPS));
+  }
+
   private void shooterHandoffSequence() {
+    STATE = MechanismEnum.SHOOTER_CHARGING;
+    leftShooterMotor.set(-.75);
+    hoodToAngle(ballistics.calculateShooterAngle());
+    handoffMotor.set(.55);
     STATE = MechanismEnum.SHOOTER_SHOOTING;
 
-    double velocity = ballistics.calculateInitialShooterVelocity();
-    double angle = ballistics.calculateShooterAngle();
+    agitatorMotor.set(.65);
+  }
 
-    hoodToAngle(angle);
+  private void runShooter() {
+    shooterToRPM(ballistics.calculateInitialShooterRPM());
+  }
 
-    handoffMotor.set((-.75*velocity));
-    agitatorMotor.set(.35);
-    leftShooterMotor.set(velocity);
+  private double getShooterRPM() {
+    return leftShooterMotor.getVelocity().getValueAsDouble() * 60;
+  }
+
+  private boolean atSpeed() {
+    double error = Math.abs(getShooterRPM() - targetRPS * 60);
+
+    return error < 50;
   }
 
   public void stopAllMotors() {
-    handoffMotor.set(0);
-    leftShooterMotor.set(0);
-    agitatorMotor.set(0);
-    hoodMotor.set(0);
+    handoffMotor.stopMotor();
+    leftShooterMotor.stopMotor();
+    agitatorMotor.stopMotor();
 
-    resetState();
-  }
-
-  private void resetState() {
     STATE = MechanismEnum.SHOOTER_IDLE;
   }
+
+
 
   public MechanismEnum getState() {
     return STATE;
@@ -108,20 +148,12 @@ public class ShooterSubsystem extends SubsystemBase {
     return run(() -> shooterHandoffSequence());
   }
 
-  public Command testAgitator() {
-    return run(() -> agitatorMotor.set(.25));
+  public Command stopFiring() {
+    return run(() -> stopAllMotors());
   }
 
   public Command testShooter() {
-    return run(() -> leftShooterMotor.set(-.25));
-  }
-
-  public Command testHandoff() {
-    return run(() -> handoffMotor.set(.25));
-  }
-
-  public Command stopFiring() {
-    return run(() -> stopAllMotors());
+    return run(() -> runShooter());
   }
 
 
