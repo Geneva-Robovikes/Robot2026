@@ -57,7 +57,7 @@ public class ShooterSubsystem extends SubsystemBase {
     config.Slot0.kV = 0.12;
     config.Slot0.kA = 0.01;
 
-    config.Slot0.kP = 0.01;
+    config.Slot0.kP = 0.001;
     config.Slot0.kI = 0.0;
     config.Slot0.kD = 0.0;
 
@@ -134,9 +134,10 @@ public class ShooterSubsystem extends SubsystemBase {
   }
 
   private boolean atSpeed() {
-    double error = Math.abs(getShooterRPM() - targetRPS * 60);
+    double error = Math.abs(Math.abs(getShooterRPM()) - Math.abs(targetRPS) * 60);
 
-    return error < 50;
+    SmartDashboard.putNumber("Shooter Error", error);
+    return error < 500;
   }
 
   public void stopAllMotors() {

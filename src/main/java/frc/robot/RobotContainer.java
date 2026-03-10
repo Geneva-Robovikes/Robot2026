@@ -149,6 +149,13 @@ public class RobotContainer {
     }
 
     public Optional<Command> getAutonomousCommand() {
+        FollowPath.registerEventTrigger("run_intake", intakeSubsystem.intake());
+        FollowPath.registerEventTrigger("stop_intake", intakeSubsystem.stopIntaking());
+        FollowPath.registerEventTrigger("intake_down", intakeSubsystem.extend());
+        FollowPath.registerEventTrigger("intake_up", intakeSubsystem.retract());
+        FollowPath.registerEventTrigger("shoot", shooterSubsystem.fire());
+        FollowPath.registerEventTrigger("stop_shooting", shooterSubsystem.stopFiring());
+
         try {
             Command path = pathBuilder.build(autoChooser.getSelected());
 
