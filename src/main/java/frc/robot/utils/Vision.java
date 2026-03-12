@@ -53,9 +53,9 @@ public class Vision extends SubsystemBase {
 
     fuelCameraOne = new PhotonCamera("fuelCameraOne");
 
-    cameraOnePosition = new Transform3d(new Translation3d(Units.inchesToMeters(10), Units.inchesToMeters(-10.875), Units.inchesToMeters(27.5)), new Rotation3d(0, Units.degreesToRadians(-30), Units.degreesToRadians(-90)));
-    cameraTwoPosition = new Transform3d(new Translation3d(Units.inchesToMeters(-7.5), Units.inchesToMeters(10.875), Units.inchesToMeters(27.5)), new Rotation3d(0, Units.degreesToRadians(-30), Units.degreesToRadians(90)));
-    cameraThreePosition = new Transform3d(new Translation3d(Units.inchesToMeters(10.875), Units.inchesToMeters(-10.875), Units.inchesToMeters(7.25)), new Rotation3d(0, Units.degreesToRadians(15), Units.degreesToRadians(-40)));
+    cameraOnePosition = new Transform3d(new Translation3d(Units.inchesToMeters(13), Units.inchesToMeters(-10.875), Units.inchesToMeters(27.5)), new Rotation3d(0, Units.degreesToRadians(-20), Units.degreesToRadians(-90)));
+    cameraTwoPosition = new Transform3d(new Translation3d(Units.inchesToMeters(-13), Units.inchesToMeters(14.875), Units.inchesToMeters(27.5)), new Rotation3d(0, Units.degreesToRadians(-20), Units.degreesToRadians(90)));
+    cameraThreePosition = new Transform3d(new Translation3d(Units.inchesToMeters(-10.875), Units.inchesToMeters(-19.875), Units.inchesToMeters(7.25)), new Rotation3d(0, Units.degreesToRadians(-20), Units.degreesToRadians(180)));
     cameraFourPosition = new Transform3d(new Translation3d(Units.inchesToMeters(10.875), Units.inchesToMeters(-10.875), Units.inchesToMeters(7.25)), new Rotation3d(0, Units.degreesToRadians(15), Units.degreesToRadians(-40)));
 
     cameraOnePoseEstimator = new PhotonPoseEstimator(kTagLayout, cameraOnePosition);

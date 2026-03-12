@@ -118,7 +118,7 @@ public class RobotContainer {
                 double dx = targetX - robotX;
                 double dy = targetY - robotY;
 
-                Rotation2d targetRotation = new Rotation2d(Math.atan2(dy, dx));
+                Rotation2d targetRotation = new Rotation2d(Math.atan2(dy, dx)-Math.PI/2);
 
                 return pointAt
                     .withVelocityX(-joystick.getLeftY() * MaxSpeed)

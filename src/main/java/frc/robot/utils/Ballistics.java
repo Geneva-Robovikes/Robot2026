@@ -6,7 +6,7 @@ public class Ballistics {
      */
     public double calculateShooterAngle() {
         /* This is just a placeholder value for testing. */
-        return -32.04;
+        return -51.63;
     }
 
     public double calculateInitialShooterRPM() {

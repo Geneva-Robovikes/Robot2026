@@ -53,9 +53,9 @@ public class ShooterSubsystem extends SubsystemBase {
 
     /* TODO: tune */
 
-    config.Slot0.kS = 0.18;
-    config.Slot0.kV = 0.12;
-    config.Slot0.kA = 0.01;
+    config.Slot0.kS = 0.0;
+    config.Slot0.kV = 0.1153;
+    config.Slot0.kA = 0.0;
 
     config.Slot0.kP = 0.001;
     config.Slot0.kI = 0.0;
@@ -112,14 +112,16 @@ public class ShooterSubsystem extends SubsystemBase {
     hoodToAngle(ballistics.calculateShooterAngle());
 
 
-    agitatorMotor.set(.65);
+
 
     if (atSpeed()) {
       handoffMotor.set(.55);
-          
+      agitatorMotor.set(.65);
+
       STATE = MechanismEnum.SHOOTER_SHOOTING;
     } else {
       handoffMotor.set(0);
+      agitatorMotor.set(0);
 
       STATE = MechanismEnum.SHOOTER_CHARGING;
     }
@@ -137,7 +139,7 @@ public class ShooterSubsystem extends SubsystemBase {
     double error = Math.abs(Math.abs(getShooterRPM()) - Math.abs(targetRPS) * 60);
 
     SmartDashboard.putNumber("Shooter Error", error);
-    return error < 500;
+    return error < 50;
   }
 
   public void stopAllMotors() {
