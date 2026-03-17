@@ -4,89 +4,79 @@
 
 package frc.robot.subsystems;
 
-import com.revrobotics.spark.SparkMax;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.revrobotics.spark.SparkLowLevel.MotorType;
-
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.utils.MechanismEnum;
 
 public class IntakeSubsystem extends SubsystemBase {
-  private final SparkMax leftIntakeMotor;
-  private final SparkMax rightIntakeMotor;
-
   private final TalonFX intakeMotor;
-
-  private final PIDController pivotPidController;
-
-  private final double INTAKE_UP = .33;
-  private final double INTAKE_DOWN = 0.0;
+  private final TalonFX intakePivotMotor;
 
   private MechanismEnum STATE = MechanismEnum.NULL;
 
   /* Left intake positive, right negative */
   
   public IntakeSubsystem() {
-    leftIntakeMotor = new SparkMax(16, MotorType.kBrushless);
-    rightIntakeMotor = new SparkMax(17, MotorType.kBrushless);
-
     /* TODO: add feedforward */
-    pivotPidController = new PIDController(.9, 0, 0);
 
     intakeMotor = new TalonFX(13);
+    intakePivotMotor = new TalonFX(0);
   }
 
   @Override
   public void periodic() {
-    SmartDashboard.putNumber("Intake Position" , leftIntakeMotor.getEncoder().getPosition());
-    SmartDashboard.putNumber("Intake PID", pivotPidController.calculate(leftIntakeMotor.getEncoder().getPosition(), INTAKE_UP));
+    SmartDashboard.putNumber("Intake Position" , intakePivotMotor.getRotorPosition().getValueAsDouble());
 
     SmartDashboard.putString("Intake State", STATE.name());
 
   }
 
   private void runPivotMotors(MechanismEnum position) {
-    double intakePIDValue = 0;
+
 
     switch (position) {
       case INTAKE_UP:
-            intakePIDValue = pivotPidController.calculate(leftIntakeMotor.getEncoder().getPosition(), INTAKE_UP);
             STATE = MechanismEnum.INTAKE_UP;
 
-            leftIntakeMotor.set(intakePIDValue);
-            rightIntakeMotor.set(-intakePIDValue);
-
+            //right negative, left positive
+            intakePivotMotor.set(0.4);
             break;
       case INTAKE_DOWN:
-            intakePIDValue = pivotPidController.calculate(leftIntakeMotor.getEncoder().getPosition(), INTAKE_DOWN);
+
             STATE = MechanismEnum.INTAKE_DOWN;
-
-            leftIntakeMotor.set(intakePIDValue);
-            rightIntakeMotor.set(-intakePIDValue);
-
+            intakePivotMotor.set(-0.4);
             break;
       default:
         break;
     }
   }
 
+  private void stopIntakePivotMotor() {
+    intakePivotMotor.set(0);
+  }
+
   public MechanismEnum getState() {
     return STATE;
   }
+
 
   public Command extend() {
     return run(() -> runPivotMotors(MechanismEnum.INTAKE_DOWN));
   }
 
   public Command retract() {
+
     return run(() -> runPivotMotors(MechanismEnum.INTAKE_UP));
   }
 
+  public Command stopPivotMotor() {
+    return run(() -> stopIntakePivotMotor());
+  }
+
   public Command intake() {
-    return run(() -> intakeMotor.set(-.45));
+    return run(() -> intakeMotor.set(-.4));
   }
 
   public Command stopIntaking() {

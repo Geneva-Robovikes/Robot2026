@@ -6,7 +6,7 @@ public class Ballistics {
      */
     public double calculateShooterAngle() {
         /* This is just a placeholder value for testing. */
-        return -51.63;
+        return 0;
     }
 
     public double calculateInitialShooterRPM() {
@@ -14,5 +14,10 @@ public class Ballistics {
 
         /* 6000 RPM absolute max, 5500 max for good recovery */
         return -3000;
+    }
+
+    public double calculateInitialHandoffRPM() {
+
+        return 2700;
     }
 }

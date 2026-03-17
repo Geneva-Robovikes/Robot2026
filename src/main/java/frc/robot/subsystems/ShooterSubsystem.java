@@ -54,10 +54,10 @@ public class ShooterSubsystem extends SubsystemBase {
     /* TODO: tune */
 
     config.Slot0.kS = 0.0;
-    config.Slot0.kV = 0.1153;
+    config.Slot0.kV = 0.11;
     config.Slot0.kA = 0.0;
 
-    config.Slot0.kP = 0.001;
+    config.Slot0.kP = 0.45;
     config.Slot0.kI = 0.0;
     config.Slot0.kD = 0.0;
 
@@ -79,6 +79,7 @@ public class ShooterSubsystem extends SubsystemBase {
 
     leftShooterMotor.getConfigurator().apply(config);
     rightShooterMotor.getConfigurator().apply(config);
+    handoffMotor.getConfigurator().apply(config);
 
     rightShooterMotor.setControl(new Follower(leftShooterMotor.getDeviceID(), MotorAlignmentValue.Opposed));
   }
@@ -86,8 +87,9 @@ public class ShooterSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     SmartDashboard.putNumber("Shooter Speed RPM", leftShooterMotor.getVelocity().getValueAsDouble() * 60);
+    SmartDashboard.putNumber("Handoff Speed RPM", handoffMotor.getVelocity().getValueAsDouble() * 60);
     SmartDashboard.putBoolean("Shooter At Speed", atSpeed());
-    SmartDashboard.putNumber("Hood Angle", hoodEncoder.getPosition().getValueAsDouble());
+    SmartDashboard.putNumber("Hood Angle", hoodMotor.getEncoder().getPosition());
     SmartDashboard.putNumber("Hood PID Controller", hoodPidController.calculate(hoodEncoder.getPosition().getValueAsDouble(), ballistics.calculateShooterAngle()));
 
     SmartDashboard.putString("Shooter State", STATE.name());
@@ -97,13 +99,21 @@ public class ShooterSubsystem extends SubsystemBase {
     /* TODO:
      * Interpolate CANCoder raw values with real-life angles
      */
-    hoodMotor.set(hoodPidController.calculate(hoodEncoder.getPosition().getValueAsDouble(), angle));
+
+    hoodMotor.set(hoodPidController.calculate(hoodMotor.getEncoder().getPosition(), angle));
   }
 
   private void shooterToRPM(double rpm) {
     targetRPS = rpm/60;
     
     leftShooterMotor.setControl(velocityRequest.withVelocity(targetRPS));
+  }
+
+  
+  private void handoffToRPM(double rpm) {
+    targetRPS = rpm/60;
+    
+    handoffMotor.setControl(velocityRequest.withVelocity(targetRPS));
   }
 
   private void shooterHandoffSequence() {
@@ -115,8 +125,8 @@ public class ShooterSubsystem extends SubsystemBase {
 
 
     if (atSpeed()) {
-      handoffMotor.set(.55);
-      agitatorMotor.set(.65);
+      handoffToRPM(ballistics.calculateInitialHandoffRPM());
+      agitatorMotor.set(.75);
 
       STATE = MechanismEnum.SHOOTER_SHOOTING;
     } else {
@@ -139,7 +149,7 @@ public class ShooterSubsystem extends SubsystemBase {
     double error = Math.abs(Math.abs(getShooterRPM()) - Math.abs(targetRPS) * 60);
 
     SmartDashboard.putNumber("Shooter Error", error);
-    return error < 50;
+    return error < 200;
   }
 
   public void stopAllMotors() {
