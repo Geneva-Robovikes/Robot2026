@@ -13,9 +13,12 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import frc.robot.generated.TunerConstants;
@@ -25,7 +28,10 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.ShooterSubsystem;
 import frc.robot.utils.AutoChooser;
+import frc.robot.utils.Ballistics;
 import frc.robot.utils.Vision;
+import frc.robot.utils.Pathfind;
+import frc.robot.utils.Location;
 
 public class RobotContainer {
     private double MaxSpeed = 1.0 * TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -50,9 +56,11 @@ public class RobotContainer {
     private final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
     private final Vision vision = new Vision(drivetrain);
     private final AutoChooser chooser = new AutoChooser();
+    private final Pathfind pathfind = new Pathfind();
+    private final Ballistics ballistics = new Ballistics(drivetrain);
 
     /* Subsystems */
-    private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem();
+    private final ShooterSubsystem shooterSubsystem = new ShooterSubsystem(ballistics);
     private final IntakeSubsystem intakeSubsystem = new IntakeSubsystem();
 
     /* Other */
@@ -62,6 +70,7 @@ public class RobotContainer {
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
     private final CommandXboxController joystick = new CommandXboxController(0);
+    private final CommandXboxController positioningJoystick = new CommandXboxController(1);
 
     public RobotContainer() {
         
@@ -107,18 +116,56 @@ public class RobotContainer {
          //   point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
         //));
 
+
+        joystick.leftBumper().whileTrue(intakeSubsystem.extend()).onFalse(intakeSubsystem.stopPivotMotor());
+        joystick.rightBumper().whileTrue(intakeSubsystem.retract()).onFalse(intakeSubsystem.stopPivotMotor());
+
+        joystick.rightTrigger().whileTrue(intakeSubsystem.agitate()).onFalse(intakeSubsystem.stopPivotMotor());
+        joystick.leftTrigger().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
+
+        joystick.y().toggleOnTrue(intakeSubsystem.intake());
+        joystick.a().onTrue(shooterSubsystem.fire()).onFalse(shooterSubsystem.stopFiring());
+        joystick.b().whileTrue(intakeSubsystem.outtake()).onFalse(intakeSubsystem.stopIntaking());
         joystick.x().whileTrue(
             drivetrain.applyRequest(() -> {
                 double robotX = drivetrain.getState().Pose.getX();
                 double robotY = drivetrain.getState().Pose.getY();
 
-                double targetX = 4.583;
-                double targetY = 4.033;
+                Rotation2d targetRotation = new Rotation2d(0);
 
-                double dx = targetX - robotX;
-                double dy = targetY - robotY;
+                double targetY = 0;
+                double targetX = 0;
 
-                Rotation2d targetRotation = new Rotation2d(Math.atan2(dy, dx)-Math.PI/2);
+                double dx = 0;
+                double dy = 0;
+
+                double distanceToHub = 0;
+
+                if (DriverStation.getAlliance().isPresent()) {
+                    Alliance allience = DriverStation.getAlliance().get();
+
+                    if (allience == Alliance.Blue) {
+                        targetX = 4.583;
+                        targetY = 3.5;
+
+                        dx = targetX - robotX;
+                        dy = targetY - robotY;
+
+
+                        distanceToHub = Math.hypot(dx, dy);
+                        targetRotation = new Rotation2d(Math.atan2(dy, dx)-(Math.PI/2));
+                    
+                    } else {
+                        targetX = 11.95;
+                        targetY = 4.213;
+
+                        dx = targetX - robotX;
+                        dy = targetY - robotY;
+                        
+                        distanceToHub = Math.hypot(dx, dy);
+                        targetRotation = new Rotation2d(Math.atan2(dy, dx)+(Math.PI/2));
+                    } 
+                }
 
                 return pointAt
                     .withVelocityX(-joystick.getLeftY() * MaxSpeed)
@@ -127,12 +174,13 @@ public class RobotContainer {
             })
         );
 
-        /* While the y button is pressed, pathfind to the tower and extend the climb. After its released, retract the climb. */
-        joystick.a().whileTrue(shooterSubsystem.fire()).onFalse(shooterSubsystem.stopFiring());
-        joystick.y().whileTrue(intakeSubsystem.intake()).onFalse(intakeSubsystem.stopIntaking());
+        joystick.povRight().whileTrue(shooterSubsystem.reverseAgitator()).onFalse(shooterSubsystem.stopFiring());
+        joystick.povUp().whileTrue(shooterSubsystem.hoodUp()).onFalse(shooterSubsystem.stopFiring());
+        joystick.povDown().whileTrue(shooterSubsystem.hoodDown()).onFalse(shooterSubsystem.stopFiring());
 
-        joystick.leftBumper().whileTrue(intakeSubsystem.extend()).onFalse(intakeSubsystem.stopPivotMotor());
-        joystick.rightBumper().whileTrue(intakeSubsystem.retract()).onFalse(intakeSubsystem.stopPivotMotor());
+        positioningJoystick.povRight().whileTrue(pathfind.to(Location.DRIVER_RIGHT_SHOOT));
+        positioningJoystick.povLeft().whileTrue(pathfind.to(Location.DRIVER_LEFT_SHOOT));
+        positioningJoystick.povUp().whileTrue(pathfind.to(Location.DRIVER_CENTER_SHOOT));
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
@@ -142,21 +190,24 @@ public class RobotContainer {
         joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
         joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse)); 
         */
-
         // Reset the field-centric heading on left bumper press.
-        joystick.leftTrigger().onTrue(drivetrain.runOnce(drivetrain::seedFieldCentric));
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }
 
     public Optional<Command> getAutonomousCommand() {
-        FollowPath.registerEventTrigger("run_intake", intakeSubsystem.intake());
         FollowPath.registerEventTrigger("stop_intake", intakeSubsystem.stopIntaking());
-        FollowPath.registerEventTrigger("intake_down", intakeSubsystem.extend());
+        FollowPath.registerEventTrigger("intake_down", intakeSubsystem.extend_auto());
         FollowPath.registerEventTrigger("intake_up", intakeSubsystem.retract());
         FollowPath.registerEventTrigger("shoot", shooterSubsystem.fire());
         FollowPath.registerEventTrigger("stop_shooting", shooterSubsystem.stopFiring());
+        FollowPath.registerEventTrigger("wait_6s", new WaitCommand(6));
 
+        // haha 67 HAHAHAHAHHA 30.... i cant hear you... SIX SEVEN!!!!
+        // SIX SEVEN!!!!!! HAHAHAHHAHAHAHAHA
+
+        // run bob time auto. do not use anything else.
+        // robot will break. slava sechs seiben/
         try {
             Command path = pathBuilder.build(autoChooser.getSelected());
 
@@ -165,4 +216,5 @@ public class RobotContainer {
             return Optional.empty();
         }
     }
+
 }

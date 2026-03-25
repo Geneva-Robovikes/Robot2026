@@ -26,6 +26,7 @@ import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -289,6 +290,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 m_hasAppliedOperatorPerspective = true;
             });
         }
+
+        SmartDashboard.putBoolean("Robot is Stopped", isStopped());
+        SmartDashboard.putNumber("Distance to Hub", getDistanceFromHub());
     }
 
     private void startSimThread() {
@@ -349,5 +353,62 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     @Override
     public Optional<Pose2d> samplePoseAt(double timestampSeconds) {
         return super.samplePoseAt(Utils.fpgaToCurrentTime(timestampSeconds));
+    }
+
+    public boolean isStopped() {
+        return ((-0.1 < this.getState().Speeds.vxMetersPerSecond) && (this.getState().Speeds.vxMetersPerSecond < 0.1)) && ((this.getState().Speeds.vyMetersPerSecond < 0.1) && (this.getState().Speeds.vyMetersPerSecond > -0.1));
+    } 
+
+    public double getDistanceFromHub() {
+
+        if (DriverStation.getAlliance().isPresent()) {
+            double hubXBlue = 0;
+            double hubYBlue = 0;
+
+            double hubXRed = 0;
+            double hubYRed = 0;
+
+            double robotX = 0;
+            double robotY = 0;
+
+            Alliance allience = DriverStation.getAlliance().get();
+            
+            if (allience == Alliance.Blue) {
+                hubXBlue = 4.630;
+                hubYBlue = 4.03;
+
+                robotX = this.getState().Pose.getX();
+                robotY = this.getState().Pose.getY();
+
+                double deltaX = Math.abs(robotX-hubXBlue);
+                double deltaY = Math.abs(robotY-hubYBlue);
+
+                double distance = Math.hypot(deltaX, deltaY);
+
+                return distance;
+            } else {
+                hubXRed = 11.999;
+                hubYRed = 3.980;
+
+                robotX = this.getState().Pose.getX();
+                robotY = this.getState().Pose.getY();
+
+                
+                double deltaX = Math.abs(robotX-hubXRed);
+                double deltaY = Math.abs(robotY-hubYRed);
+
+                double distance = Math.hypot(deltaX, deltaY);
+
+
+                return distance;
+            }
+        } else {
+            return 0.0;
+        }
+
+    }
+
+    public boolean insideAllienceZone() {
+        return false;
     }
 }

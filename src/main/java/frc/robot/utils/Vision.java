@@ -23,19 +23,19 @@ public class Vision extends SubsystemBase {
   private final PhotonCamera cameraOne;
   private final PhotonCamera cameraTwo;
   private final PhotonCamera cameraThree;
-  private final PhotonCamera cameraFour;
+  //private final PhotonCamera cameraFour;
 
-  private final PhotonCamera fuelCameraOne;
+  //private final PhotonCamera fuelCameraOne;
 
   private final Transform3d cameraOnePosition;
   private final Transform3d cameraTwoPosition;
   private final Transform3d cameraThreePosition;
-  private final Transform3d cameraFourPosition;
+  //private final Transform3d cameraFourPosition;
 
   private final PhotonPoseEstimator cameraOnePoseEstimator;
   private final PhotonPoseEstimator cameraTwoPoseEstimator;
   private final PhotonPoseEstimator cameraThreePoseEstimator;
-  private final PhotonPoseEstimator cameraFourPoseEstimator;
+  //private final PhotonPoseEstimator cameraFourPoseEstimator;
   
   public final AprilTagFieldLayout kTagLayout;
 
@@ -49,19 +49,19 @@ public class Vision extends SubsystemBase {
     cameraOne = new PhotonCamera("cameraOne");
     cameraTwo = new PhotonCamera("cameraTwo");  
     cameraThree = new PhotonCamera("cameraThree");
-    cameraFour = new PhotonCamera("cameraFour");
+    //cameraFour = new PhotonCamera("cameraFour");
 
-    fuelCameraOne = new PhotonCamera("fuelCameraOne");
+    //fuelCameraOne = new PhotonCamera("fuelCameraOne");
 
-    cameraOnePosition = new Transform3d(new Translation3d(Units.inchesToMeters(13), Units.inchesToMeters(-10.875), Units.inchesToMeters(27.5)), new Rotation3d(0, Units.degreesToRadians(-20), Units.degreesToRadians(-90)));
+    cameraThreePosition = new Transform3d(new Translation3d(Units.inchesToMeters(13), Units.inchesToMeters(-10.875), Units.inchesToMeters(27.5)), new Rotation3d(0, Units.degreesToRadians(-20), Units.degreesToRadians(-90)));
     cameraTwoPosition = new Transform3d(new Translation3d(Units.inchesToMeters(-13), Units.inchesToMeters(14.875), Units.inchesToMeters(27.5)), new Rotation3d(0, Units.degreesToRadians(-20), Units.degreesToRadians(90)));
-    cameraThreePosition = new Transform3d(new Translation3d(Units.inchesToMeters(-10.875), Units.inchesToMeters(-19.875), Units.inchesToMeters(7.25)), new Rotation3d(0, Units.degreesToRadians(-20), Units.degreesToRadians(180)));
-    cameraFourPosition = new Transform3d(new Translation3d(Units.inchesToMeters(10.875), Units.inchesToMeters(-10.875), Units.inchesToMeters(7.25)), new Rotation3d(0, Units.degreesToRadians(15), Units.degreesToRadians(-40)));
+    cameraOnePosition = new Transform3d(new Translation3d(Units.inchesToMeters(-10.875), Units.inchesToMeters(-19.875), Units.inchesToMeters(7.25)), new Rotation3d(0, Units.degreesToRadians(-20), Units.degreesToRadians(180)));
+    //cameraFourPosition = new Transform3d(new Translation3d(Units.inchesToMeters(10.875), Units.inchesToMeters(-10.875), Units.inchesToMeters(7.25)), new Rotation3d(0, Units.degreesToRadians(15), Units.degreesToRadians(-40)));
 
     cameraOnePoseEstimator = new PhotonPoseEstimator(kTagLayout, cameraOnePosition);
     cameraTwoPoseEstimator = new PhotonPoseEstimator(kTagLayout, cameraTwoPosition);
     cameraThreePoseEstimator = new PhotonPoseEstimator(kTagLayout, cameraThreePosition);
-    cameraFourPoseEstimator = new PhotonPoseEstimator(kTagLayout, cameraFourPosition);
+    //cameraFourPoseEstimator = new PhotonPoseEstimator(kTagLayout, cameraFourPosition);
   }
 
   @Override
@@ -69,9 +69,9 @@ public class Vision extends SubsystemBase {
     var cameraOneResult = cameraOne.getLatestResult();
     var cameraTwoResult = cameraTwo.getLatestResult();
     var cameraThreeResult = cameraThree.getLatestResult();
-    var cameraFourResult = cameraFour.getLatestResult();
+    //var cameraFourResult = cameraFour.getLatestResult();
 
-    var fuelResult = fuelCameraOne.getLatestResult();
+    //var fuelResult = fuelCameraOne.getLatestResult();
 
     if (cameraOneResult.hasTargets()) {
       SmartDashboard.putBoolean("oneHasTarget", true);
@@ -91,11 +91,11 @@ public class Vision extends SubsystemBase {
       SmartDashboard.putBoolean("threeHasTarget", false);
     }
 
-    if (cameraFourResult.hasTargets()) {
+    /* if (cameraFourResult.hasTargets()) {
       SmartDashboard.putBoolean("fourHasTarget", true);
     } else {
       SmartDashboard.putBoolean("fourHasResult", false);
-    }
+    } 
 
     if (fuelResult.hasTargets()) {
       SmartDashboard.putBoolean("fuelHasTarget", true);
@@ -104,12 +104,12 @@ public class Vision extends SubsystemBase {
       SmartDashboard.putNumber("bestFuelPositionZ", fuelResult.getBestTarget().bestCameraToTarget.getZ());
     } else {
       SmartDashboard.putBoolean("fuelHasTarget", false);
-    }
+    } */
 
     Optional<EstimatedRobotPose> cameraOnePose = cameraOnePoseEstimator.estimateCoprocMultiTagPose(cameraOneResult);
     Optional<EstimatedRobotPose> cameraTwoPose = cameraTwoPoseEstimator.estimateCoprocMultiTagPose(cameraTwoResult);
     Optional<EstimatedRobotPose> cameraThreePose = cameraThreePoseEstimator.estimateCoprocMultiTagPose(cameraThreeResult);
-    Optional<EstimatedRobotPose> cameraFourPose = cameraFourPoseEstimator.estimateCoprocMultiTagPose(cameraFourResult);
+    //Optional<EstimatedRobotPose> cameraFourPose = cameraFourPoseEstimator.estimateCoprocMultiTagPose(cameraFourResult);
 
     if (cameraOnePose.isPresent()) {
       SmartDashboard.putBoolean("camOnePresent", true);
@@ -138,6 +138,7 @@ public class Vision extends SubsystemBase {
       SmartDashboard.putBoolean("camThreePresent", false);
     }
 
+    /* 
     if (cameraFourPose.isPresent()) {
       SmartDashboard.putBoolean("camFourPresent", true);
       swerveDrivetrain.addVisionMeasurement(
@@ -145,6 +146,6 @@ public class Vision extends SubsystemBase {
         cameraFourPose.get().timestampSeconds);
     } else {
       SmartDashboard.putBoolean("camFourPresent", false);
-    }
+    } */
   }
 }

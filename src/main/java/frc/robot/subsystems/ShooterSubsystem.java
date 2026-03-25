@@ -7,7 +7,6 @@ package frc.robot.subsystems;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.VelocityVoltage;
-import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.revrobotics.spark.SparkMax;
@@ -16,9 +15,10 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.utils.Ballistics;
-import frc.robot.utils.MechanismEnum;
+import frc.robot.utils.enums.MechanismEnum;
 
 public class ShooterSubsystem extends SubsystemBase {
   private final TalonFX leftShooterMotor;
@@ -28,7 +28,7 @@ public class ShooterSubsystem extends SubsystemBase {
   private final SparkMax agitatorMotor;
   private final SparkMax hoodMotor;
 
-  private final CANcoder hoodEncoder;
+  //private final CANcoder hoodEncoder;
 
   private final PIDController hoodPidController;
 
@@ -48,18 +48,18 @@ public class ShooterSubsystem extends SubsystemBase {
    */
 
 
-  public ShooterSubsystem() {
+  public ShooterSubsystem(Ballistics ballistics) {
     TalonFXConfiguration config = new TalonFXConfiguration();
 
     /* TODO: tune */
 
     config.Slot0.kS = 0.0;
-    config.Slot0.kV = 0.11;
+    config.Slot0.kV = 0.112;
     config.Slot0.kA = 0.0;
 
-    config.Slot0.kP = 0.45;
-    config.Slot0.kI = 0.0;
-    config.Slot0.kD = 0.0;
+    config.Slot0.kP = 0.6;
+    //config.Slot0.kI = 0.0;
+    //config.Slot0.kD = 0.0;
 
     config.CurrentLimits.SupplyCurrentLimit = 60;
     config.CurrentLimits.SupplyCurrentLimitEnable = true;
@@ -68,11 +68,11 @@ public class ShooterSubsystem extends SubsystemBase {
     rightShooterMotor = new TalonFX(21);
     handoffMotor = new TalonFX(24);
 
-    hoodEncoder = new CANcoder(30);
+    //hoodEncoder = new CANcoder(30);
 
-    hoodPidController = new PIDController(.32, 0, 0);
+    hoodPidController = new PIDController(.001, 0, 0);
 
-    ballistics = new Ballistics();
+    this.ballistics = ballistics;
 
     hoodMotor = new SparkMax(22, MotorType.kBrushless);
     agitatorMotor = new SparkMax(23, MotorType.kBrushless);
@@ -86,21 +86,14 @@ public class ShooterSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    SmartDashboard.putNumber("Shooter Speed RPM", leftShooterMotor.getVelocity().getValueAsDouble() * 60);
+    SmartDashboard.putNumber("Shooter Actual Speed RPM", leftShooterMotor.getVelocity().getValueAsDouble() * 60);
+    SmartDashboard.putNumber("Shooter Requested Speed RPM", ballistics.calculateInitialShooterRPM());
     SmartDashboard.putNumber("Handoff Speed RPM", handoffMotor.getVelocity().getValueAsDouble() * 60);
     SmartDashboard.putBoolean("Shooter At Speed", atSpeed());
     SmartDashboard.putNumber("Hood Angle", hoodMotor.getEncoder().getPosition());
-    SmartDashboard.putNumber("Hood PID Controller", hoodPidController.calculate(hoodEncoder.getPosition().getValueAsDouble(), ballistics.calculateShooterAngle()));
+    SmartDashboard.putNumber("Hood PID Controller", hoodPidController.calculate(hoodMotor.getEncoder().getPosition(), ballistics.calculateShooterAngle()));
 
     SmartDashboard.putString("Shooter State", STATE.name());
-  }
-
-  private void hoodToAngle(double angle) {
-    /* TODO:
-     * Interpolate CANCoder raw values with real-life angles
-     */
-
-    hoodMotor.set(hoodPidController.calculate(hoodMotor.getEncoder().getPosition(), angle));
   }
 
   private void shooterToRPM(double rpm) {
@@ -119,26 +112,24 @@ public class ShooterSubsystem extends SubsystemBase {
   private void shooterHandoffSequence() {
     STATE = MechanismEnum.SHOOTER_CHARGING;
     shooterToRPM(ballistics.calculateInitialShooterRPM());
-    hoodToAngle(ballistics.calculateShooterAngle());
+    //hoodToAngle(-2.023);
 
 
 
 
     if (atSpeed()) {
       handoffToRPM(ballistics.calculateInitialHandoffRPM());
-      agitatorMotor.set(.75);
+      agitatorMotor.set(.85);
+      hoodMotor.set(.12);
 
       STATE = MechanismEnum.SHOOTER_SHOOTING;
     } else {
-      handoffMotor.set(0);
-      agitatorMotor.set(0);
+      //handoffMotor.set(0);
+      //agitatorMotor.set(0);
+      hoodMotor.set(0);
 
       STATE = MechanismEnum.SHOOTER_CHARGING;
     }
-  }
-
-  private void runShooter() {
-    shooterToRPM(ballistics.calculateInitialShooterRPM());
   }
 
   private double getShooterRPM() {
@@ -149,13 +140,14 @@ public class ShooterSubsystem extends SubsystemBase {
     double error = Math.abs(Math.abs(getShooterRPM()) - Math.abs(targetRPS) * 60);
 
     SmartDashboard.putNumber("Shooter Error", error);
-    return error < 200;
+    return error < 100;
   }
 
   public void stopAllMotors() {
     handoffMotor.stopMotor();
     leftShooterMotor.stopMotor();
     agitatorMotor.stopMotor();
+    hoodMotor.stopMotor();
 
     STATE = MechanismEnum.SHOOTER_IDLE;
   }
@@ -174,8 +166,16 @@ public class ShooterSubsystem extends SubsystemBase {
     return run(() -> stopAllMotors());
   }
 
-  public Command testShooter() {
-    return run(() -> runShooter());
+  public Command reverseAgitator() {
+    return run(() -> agitatorMotor.set(-.5));
+  } 
+
+  public Command hoodUp() {
+    return run(() -> hoodMotor.set(-.25));
+  }
+
+  public Command hoodDown() {
+    return run(() -> hoodMotor.set(.25));
   }
 
 

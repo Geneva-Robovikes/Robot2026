@@ -45,6 +45,33 @@ public class Pathfind {
                     return pathfindingCommand;
                 }
 
+            case DRIVER_LEFT_SHOOT:
+                load("shootl");
+
+                if (AutoBuilder.isConfigured()) {
+                    Command pathfindingCommand = AutoBuilder.pathfindThenFollowPath(path, constraints);
+
+                    return pathfindingCommand;
+                }
+
+            case DRIVER_CENTER_SHOOT:
+                load("shootc");
+
+                if (AutoBuilder.isConfigured()) {
+                    Command pathfindingCommand = AutoBuilder.pathfindThenFollowPath(path, constraints);
+
+                    return pathfindingCommand;
+                }
+
+            case DRIVER_RIGHT_SHOOT:
+                load("shootr");
+
+                if (AutoBuilder.isConfigured()) {
+                    Command pathfindingCommand = AutoBuilder.pathfindThenFollowPath(path, constraints);
+
+                    return pathfindingCommand;
+                }
+
             default:
                 System.out.println("sometin wong");
                 return new Command() {};
